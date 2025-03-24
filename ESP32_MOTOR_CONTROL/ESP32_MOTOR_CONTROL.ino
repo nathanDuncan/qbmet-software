@@ -3,48 +3,72 @@
 #include "Motor.h"
 #include "RemoteDebug.h"
 
-// Create global instances (using the correct CAN IDs)
+// Create a global CAN handler
 CANHandler canHandler;
-Motor motor(0x01, canHandler, Debug);  // Use the feedback ID if that’s what your motor expects
+
+// Create two Motor objects, one for ID=1 and one for ID=2
+Motor motor1(0x01, canHandler, Debug);
+Motor motor2(0x02, canHandler, Debug);
 
 void setup() {
   Serial.begin(115200);
-  delay(10000);
+  delay(10000); // Give time to open Serial Monitor
   Serial.println("Beginning program...");
 
   Debug.begin("ESP32_Motor_Controller");
 
+  // Initialize the CAN bus
   canHandler.setupCAN();
   Serial.println("CAN bus initialized.");
 
-  // Start the motor in MIT mode (enter motor control mode)
-  motor.start();
-  Serial.println("Motor started.");
+  // Start motor1 in MIT mode
+  motor1.start();
+  Serial.println("Motor 1 started.");
 
-  // Set the current motor position as zero
-  motor.reZero();
+  // Start motor2 in MIT mode
+  motor2.start();
+  Serial.println("Motor 2 started.");
+
+  // Re-zero motors
+  motor1.reZero();
+  motor2.reZero();
+  Serial.println("Motors re-zeroed.");
+  
   delay(100);
-
-  Serial.println("Sending fixed command: velocity=0, torque=1.0, kp=0, kd=0.3, position=0");
+  Serial.println("Sending fixed commands to both motors...");
 }
 
 void loop() {
-  // Update CAN bus communications
+  // Update incoming CAN messages
   canHandler.update();
 
-  // Send the fixed motor command with the specified parameters
-  motor.sendCommand(0.0, 0.0, 0.0, 0.4, 2.0);
+  // Send the same command to both motors
+  // (position=0.0, velocity=0.0, kp=0.4, kd=0.0, t_ff=2.0)
+  motor1.sendCommand(0.0, 0.0, 0.0, 0.6, 4.0);
+  motor2.sendCommand(0.0, 0.0, 0.0, 0.6, 4.0);
 
-  // Update the motor command transmission
-  motor.update();
+  // Update each motor's outgoing messages
+  motor1.update();
+  motor2.update();
 
-  // Print telemetry for debugging
-  Debug.printf("Position   : %f\n", motor.getPosition());
-  Debug.printf("Velocity   : %f\n", motor.getVelocity());
-  Debug.printf("Torque     : %f\n", motor.getTorque());
-  Debug.printf("Temperature: %d\n", motor.getTemperature());
-  Debug.printf("Error Code : %d\n", motor.getErrorCode());
-  Debug.printf("Online     : %s\n", motor.isOnline() ? "Yes" : "No");
+  // Print telemetry for Motor 1
+  Debug.println("==== Motor 1 Telemetry ====");
+  Debug.printf("Position   : %f\n", motor1.getPosition());
+  Debug.printf("Velocity   : %f\n", motor1.getVelocity());
+  Debug.printf("Torque     : %f\n", motor1.getTorque());
+  Debug.printf("Temperature: %d\n", motor1.getTemperature());
+  Debug.printf("Error Code : %d\n", motor1.getErrorCode());
+  Debug.printf("Online     : %s\n", motor1.isOnline() ? "Yes" : "No");
 
-  delay(2500);  // Adjust the delay as needed
+  // Print telemetry for Motor 2
+  Debug.println("==== Motor 2 Telemetry ====");
+  Debug.printf("Position   : %f\n", motor2.getPosition());
+  Debug.printf("Velocity   : %f\n", motor2.getVelocity());
+  Debug.printf("Torque     : %f\n", motor2.getTorque());
+  Debug.printf("Temperature: %d\n", motor2.getTemperature());
+  Debug.printf("Error Code : %d\n", motor2.getErrorCode());
+  Debug.printf("Online     : %s\n", motor2.isOnline() ? "Yes" : "No");
+  Debug.println("============================");
+
+  delay(2500);  // Adjust delay to suit your application
 }

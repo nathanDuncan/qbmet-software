@@ -182,21 +182,21 @@ void Motor::unpackCommand(const CANMessage &msg)
   unsigned int t_int  = ((msg.data[6] & 0x0F) << 8) | msg.data[7];
 
   // Debug prints to verify correct parsing
-  Serial.print("Received CAN message: ");
+  // Serial.print("Received CAN message: ");
   for (uint8_t i = 0; i < msg.len; i++) {
-    Serial.printf("%02X ", msg.data[i]);
+    // Serial.printf("%02X ", msg.data[i]);
   }
-  Serial.println();
+  // Serial.println();
 
-  Serial.printf("Raw ints: Position=%u, Velocity=%u, KP=%u, KD=%u, Torque=%u\n",
-                positionInt, velocityInt, kp_int, kd_int, t_int);
+  // Serial.printf("Raw ints: Position=%u, Velocity=%u, KP=%u, KD=%u, Torque=%u\n",
+                // positionInt, velocityInt, kp_int, kd_int, t_int);
 
   // Convert to Floats
   pOut = uintToFloat(positionInt, P_MIN, P_MAX, 16);
   vOut = uintToFloat(velocityInt, V_MIN, V_MAX, 12);
   iOut = uintToFloat(t_int,       T_MIN, T_MAX, 12);
 
-  Serial.printf("Converted: pOut=%f, vOut=%f, iOut=%f\n", pOut, vOut, iOut);
+  // Serial.printf("Converted: pOut=%f, vOut=%f, iOut=%f\n", pOut, vOut, iOut);
 }
 
 // ------------------ Update & Send ------------------

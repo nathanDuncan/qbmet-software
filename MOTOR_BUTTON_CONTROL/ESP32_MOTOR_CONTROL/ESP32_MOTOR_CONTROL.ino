@@ -3,42 +3,34 @@
 #include "Motor.h"
 #include "RemoteDebug.h"
 
-// Pin definitions for the buttons
+// Button pin definitions
 const int buttonPin1 = 18;
 const int buttonPin2 = 19;
 
-// Create a global CAN handler
+// Global CAN handler
 CANHandler canHandler;
 
-// Create two Motor objects, one for ID=1 and one for ID=2
+// Motors
 Motor motor1(0x01, canHandler, Debug);
 Motor motor2(0x02, canHandler, Debug);
 
 void setup() {
   Serial.begin(115200);
-  delay(10000); // Give time to open Serial Monitor
+  delay(2000);
   Serial.println("Beginning program...");
 
   Debug.begin("ESP32_Motor_Controller");
 
-  // Initialize the CAN bus
   canHandler.setupCAN();
   Serial.println("CAN bus initialized.");
 
-  // Start motor1 in MIT mode
   motor1.start();
-  Serial.println("Motor 1 started.");
-
-  // Start motor2 in MIT mode
   motor2.start();
-  Serial.println("Motor 2 started.");
-
-  // Re-zero motors
   motor1.reZero();
   motor2.reZero();
   Serial.println("Motors re-zeroed.");
 
-  // Configure button pins
+  // Use INPUT if buttons are wired to VCC (HIGH when pressed)
   pinMode(buttonPin1, INPUT);
   pinMode(buttonPin2, INPUT);
 
@@ -47,37 +39,29 @@ void setup() {
 }
 
 void loop() {
-  // Update incoming CAN messages
   canHandler.update();
 
-  // Read the state of both buttons
-  int buttonState1 = digitalRead(buttonPin1);
-  int buttonState2 = digitalRead(buttonPin2);
+  // Read button states
+  bool pressed1 = digitalRead(buttonPin1) == HIGH;
+  bool pressed2 = digitalRead(buttonPin2) == HIGH;
 
-  // If button1 is pressed, turn motor1
-  if (buttonState1 == HIGH) {
-    // Example: sending a small positive torque
-    // (position=0, velocity=0, kp=0.6, kd=0, torque=4.0)
+  if (pressed1) {
+    Serial.println("Button 1 Pressed: REVERSE");
+    motor1.sendCommand(0.0, 0.0, 0.0, 0.6, -4.0);
+    motor2.sendCommand(0.0, 0.0, 0.0, 0.6, -4.0);
+  } else if (pressed2) {
+    Serial.println("Button 2 Pressed: FORWARD");
     motor1.sendCommand(0.0, 0.0, 0.0, 0.6, 4.0);
-  } else {
-    // If not pressed, send zero torque
-    motor1.sendCommand(0.0, 0.0, 0.0, 0.6, 0.0);
-  }
-
-  // If button2 is pressed, turn motor2
-  if (buttonState2 == HIGH) {
-    // Example: sending a small positive torque
     motor2.sendCommand(0.0, 0.0, 0.0, 0.6, 4.0);
   } else {
-    // If not pressed, send zero torque
-    motor2.sendCommand(0.0, 0.0, 0.0, 0.6, 0.0);
+    motor1.stop()
+    motor2.stop()
   }
 
-  // Update outgoing messages for each motor
   motor1.update();
   motor2.update();
 
-  // --- Optional: Debug printouts/telemetry ---
+  // Debug telemetry
   Debug.println("==== Motor 1 Telemetry ====");
   Debug.printf("Position   : %f\n", motor1.getPosition());
   Debug.printf("Velocity   : %f\n", motor1.getVelocity());
@@ -95,5 +79,5 @@ void loop() {
   Debug.printf("Online     : %s\n", motor2.isOnline() ? "Yes" : "No");
   Debug.println("============================");
 
-  delay(200); // Adjust to your needs for responsiveness
+  delay(20);  // small debounce and loop delay
 }

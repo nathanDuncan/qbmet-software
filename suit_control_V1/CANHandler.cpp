@@ -51,11 +51,11 @@ void CANHandler::update () {
         lastRecievedTime[count] = millis();
 
         // Optional debug print
-        Serial.printf("RX ‑ ID: 0x%lX  Data:", message.id);
+        // Serial.printf("RX ‑ ID: 0x%lX  Data:", message.id);
         for (uint8_t i = 0; i < message.len; ++i) {
-            Serial.printf(" %02X", message.data[i]);
+            // Serial.printf(" %02X", message.data[i]);
         }
-        Serial.println();
+        // Serial.println();
 
         ++count;
     }

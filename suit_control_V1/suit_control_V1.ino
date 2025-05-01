@@ -25,9 +25,9 @@ Motor motor4(0x04, canHandler, Debug); // LEFT KNEE
 
 // MPU axis unit vectors - these were determined experimentally
 float mpuVec1[3] = {0.25246345, 0.92360996, 0.28845599}; // channel 0 - right hip
-float mpuVec2[3] = {-0.1785347   0.73366519  0.65563767}; // channel 1 - right knee
+float mpuVec2[3] = {-0.1785347,   0.73366519,  0.65563767}; // channel 1 - right knee
 float mpuVec3[3] = {-0.26444315, 0.78469925, -0.56063973}; // channel 4 - left hip
-float mpuVec4[3] = {-0.47553835  0.80868328 -0.34625804}; // channel 5 - left knee
+float mpuVec4[3] = {-0.47553835,  0.80868328, -0.34625804}; // channel 5 - left knee
 
 Adafruit_MPU6050 mpu;
 
@@ -49,8 +49,8 @@ float dotProduct(float gyroVec[3], float sensorVec[3]) {
 }
 
 // Proportional gain for control
-const float Kp_HIP = 4.5;
-const float Kp_KNEE = 2.5;
+const float Kp_HIP = 6.0;
+const float Kp_KNEE = 1.5;
 
 void setup() {
   Serial.begin(115200);

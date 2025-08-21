@@ -50,45 +50,66 @@ float dotProduct(float gyroVec[3], float sensorVec[3]) {
 
 // Proportional gain for control
 const float Kp_HIP = 6.0;
-const float Kp_KNEE = 1.5;
+const float Kp_KNEE = 2.5;
 
 void setup() {
-  Serial.begin(115200);
   delay(1000);
-  Serial.println("Beginning program...");
 
-  Debug.begin("ESP32_Motor_Controller");
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(200);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN, LOW);
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
 
-  // ---------- CAN BUS INITIALISATION ----------
+  // 1) Bring up CAN bus
   canHandler.setupCAN(CAN_TX_PIN, CAN_RX_PIN);
-  Serial.println("CAN bus initialized.");
 
-  // Initialise motors
-  motor1.start();
-  motor2.start();
-  motor3.start();
-  motor4.start();
-  motor1.reZero();
-  motor2.reZero();
-  motor3.reZero();
-  motor4.reZero();
-  Serial.println("Motors re-zeroed.");
+  // 2) Wait for all 4 motors to reply on the bus
+  //    (give each up to 2 seconds to show up)
+  const uint32_t start = millis();
+  while (millis() - start < 2000) {
+    canHandler.update();
+    bool allOnline = true;
+    for (uint8_t id = 1; id <= 4; ++id) {
+      if (!canHandler.getIsOnline(id)) {
+        allOnline = false;
+        break;
+      }
+    }
+    if (allOnline) break;
+    delay(50);
+  }
 
-  // Initialize both MPUs
+  // 3) Now start and re-zero each motor exactly once
+  motor1.start(); motor1.reZero();
+  motor2.start(); motor2.reZero();
+  motor3.start(); motor3.reZero();
+  motor4.start(); motor4.reZero();
+
+  // 4) Finally bring up the MPUs
   selectMuxChannel(0);
-  if (!mpu.begin()) {
-    Serial.println("MPU0 not found!");
-  }
-  delay(200);
+  if (!mpu.begin()) Serial.println("MPU0 not found!");
+  delay(100);
+  selectMuxChannel(1);
+  if (!mpu.begin()) Serial.println("MPU0 not found!");
+  delay(100);
   selectMuxChannel(4);
-  if (!mpu.begin()) {
-    Serial.println("MPU4 not found!");
-  }
+  if (!mpu.begin()) Serial.println("MPU4 not found!");
+  selectMuxChannel(5);
+  if (!mpu.begin()) Serial.println("MPU0 not found!");
+  delay(100);
 }
 
+
+unsigned long prev_time = millis();
+
 void loop() {
+
   canHandler.update();
   motor1.update();
   motor2.update();
@@ -117,7 +138,7 @@ void loop() {
   float omega4 = dotProduct(gyro4vec, mpuVec3);
 
   // MPU4 (LEFT KNEE)
-  selectMuxChannel(4);
+  selectMuxChannel(5);
   sensors_event_t accel5, gyro5, temp5;
   mpu.getEvent(&accel5, &gyro5, &temp5);
   float gyro5vec[3] = {gyro5.gyro.x, gyro5.gyro.y, gyro5.gyro.z};
@@ -175,6 +196,5 @@ void loop() {
   Serial.print(" || omega5: "); Serial.print(omega5, 4);
   Serial.print(" | torque4: "); Serial.println(torque4, 4);
 
-  delay(10); // 20 Hz
+  delay(10); // 100 Hz
 }
-

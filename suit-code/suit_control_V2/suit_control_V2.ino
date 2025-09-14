@@ -13,11 +13,16 @@ static const int CAN_RX_PIN = 21;   // D21 = RX
 static const int I2C_SDA_PIN = 23;
 static const int I2C_SCL_PIN = 25;
 
+// Proportional gain for control
+const float Kp_HIP = 6.0;
+const float Kp_KNEE = 2.5;
+
 // Global CAN handler
 CANHandler canHandler;
 
 // Motors
-Motor motor1(0x01, canHandler, Debug); // RIGHT HIP
+//Motor motor1(0x01, canHandler, Debug); // RIGHT HIP
+Motor motor4(0x04, canHandler, Debug); // LEFT KNEE
 
 
 // MPU axis unit vectors - these were determined experimentally
@@ -45,8 +50,7 @@ float dotProduct(float gyroVec[3], float sensorVec[3]) {
   return sum;
 }
 
-// Proportional gain for control
-const float Kp_HIP = 7.0;
+
 
 // Derivative gain and filter settings for motor1
 const float Kd_HIP = 0.01;
@@ -71,15 +75,15 @@ void setup() {
   Serial.println("CAN bus initialized.");
 
   // Initialise motors
-  motor1.start();
-  /*motor2.start();
-  motor3.start();
-  motor4.start();
+  /*motor1.start();
+  motor2.start();
+  motor3.start();*/
+  motor4.start();/*
   motor1.reZero();
   motor2.reZero();
-  motor3.reZero();
+  motor3.reZero();*/
   motor4.reZero();
-  */
+  
   Serial.println("Motors re-zeroed.");
 
   // Initialize MPUs
@@ -109,38 +113,38 @@ void loop() {
   unsigned long curr = millis();
   if (curr - prev_time >= 15000) {
     // Stop all motors
-    motor1.stop();
-    /*motor2.stop();
-    motor3.stop();
+    /*motor1.stop();
+    motor2.stop();
+    motor3.stop();*/
     motor4.stop();
-    */
+    
 
     // Restart and rezero
-    motor1.start();
+    /*motor1.start();
     motor1.reZero();
-    /*motor2.start();
+    motor2.start();
     motor2.reZero();
     motor3.start();
-    motor3.reZero();
+    motor3.reZero();*/
     motor4.start();
-    motor4.reZero();*/
+    motor4.reZero();
 
     Serial.println("Motors reset at 5-second interval.");
     prev_time = curr;
   }
 
   canHandler.update();
-  motor1.update();
-  /*motor2.update();
-  motor3.update();
+  /*motor1.update();
+  motor2.update();
+  motor3.update();*/
   motor4.update();
-  */
+  
 
   unsigned long now = millis();
   float dt = (now - prev_time) / 1000.0;
   prev_time = now;
 
-
+/*
   // MPU0 (RIGHT HIP)
   selectMuxChannel(0);
   sensors_event_t accel0, gyro0, temp0;
@@ -148,7 +152,7 @@ void loop() {
   float gyro0vec[3] = {gyro0.gyro.x, gyro0.gyro.y, gyro0.gyro.z};
   float omega0 = dotProduct(gyro0vec, mpuVec1);
 
-  /*
+  
   // MPU1 (RIGHT KNEE)
   selectMuxChannel(1);
   sensors_event_t accel1, gyro1, temp1;
@@ -161,7 +165,7 @@ void loop() {
   sensors_event_t accel4, gyro4, temp4;
   mpu.getEvent(&accel4, &gyro4, &temp4);
   float gyro4vec[3] = {gyro4.gyro.x, gyro4.gyro.y, gyro4.gyro.z};
-  float omega4 = dotProduct(gyro4vec, mpuVec3);
+  float omega4 = dotProduct(gyro4vec, mpuVec3);*/
 
   // MPU4 (LEFT KNEE)
   selectMuxChannel(4);
@@ -169,13 +173,14 @@ void loop() {
   mpu.getEvent(&accel5, &gyro5, &temp5);
   float gyro5vec[3] = {gyro5.gyro.x, gyro5.gyro.y, gyro5.gyro.z};
   float omega5 = dotProduct(gyro5vec, mpuVec4);
-  */
+  
 
   float torque1 = 0.0;
   float torque2 = 0.0;
   float torque3 = 0.0;
   float torque4 = 0.0;
 
+/*
   // Threshold for both directions
   // RIGHT HIP (PD with derivative filtering)
   if (abs(omega0) > 0.01) {
@@ -184,7 +189,10 @@ void loop() {
   prev_omega0 = omega0;
 
   float totalTorque = -Kp_HIP * omega0;
+  */
 
+
+/*
   // Apply derivative only if moving enough
   if (abs(omega0) > 1.0) {
     totalTorque -= Kd_HIP * filtered_domega0;
@@ -200,7 +208,7 @@ void loop() {
 
 
 
-  /*
+  
   // RIGHT KNEE
   if (abs(omega1) > 0.01) {
     torque2 = -Kp_KNEE * omega1;
@@ -218,7 +226,7 @@ void loop() {
   } else {
     motor3.sendCommand(0.0, 0.0, 0.0, 0.0, 0.0);
   }
-
+*/
   // LEFT KNEE
   if (abs(omega5) > 0.01) {
     torque4 = Kp_KNEE * omega5;
@@ -227,19 +235,20 @@ void loop() {
   } else {
     motor4.sendCommand(0.0, 0.0, 0.0, 0.0, 0.0);
   }
-  */
+  
 
   // Always print for log
+  /*
   Serial.print("omega0: "); Serial.print(omega0, 4);
   Serial.print(" | torque1: "); Serial.print(torque1, 4);
-  /*
+  
   Serial.print("omega1: "); Serial.print(omega1, 4);
   Serial.print(" | torque2: "); Serial.print(torque2, 4);
   Serial.print(" || omega4: "); Serial.print(omega4, 4);
-  Serial.print(" | torque3: "); Serial.println(torque3, 4);
+  Serial.print(" | torque3: "); Serial.println(torque3, 4);*/
   Serial.print(" || omega5: "); Serial.print(omega5, 4);
   Serial.print(" | torque4: "); Serial.println(torque4, 4);
-  */
+  
 
   delay(10); // 100 Hz
 }

@@ -1,7 +1,7 @@
 #ifndef MOTOR_H
 #define MOTOR_H
 
-#include "ACAN_ESP32.h"
+//#include "ACAN_ESP32.h"
 #include "CANHandler.h"
 #include "RemoteDebug.h"
 
